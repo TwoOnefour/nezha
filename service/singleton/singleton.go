@@ -1,10 +1,12 @@
 package singleton
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -12,7 +14,7 @@ import (
 	"github.com/naiba/nezha/pkg/utils"
 )
 
-var Version = "debug"
+var Version = "0.20.13 mysql魔改版"
 
 var (
 	Conf  *model.Config
@@ -52,10 +54,40 @@ func InitConfigFromPath(path string) {
 
 // InitDBFromPath 从给出的文件路径中加载数据库
 func InitDBFromPath(path string) {
+	if Conf.UseMysql {
+		return
+	}
 	var err error
 	DB, err = gorm.Open(sqlite.Open(path), &gorm.Config{
 		CreateBatchSize: 200,
 	})
+	if err != nil {
+		panic(err)
+	}
+	if Conf.Debug {
+		DB = DB.Debug()
+	}
+	err = DB.AutoMigrate(model.Server{}, model.User{},
+		model.Notification{}, model.AlertRule{}, model.Monitor{},
+		model.MonitorHistory{}, model.Cron{}, model.Transfer{},
+		model.ApiToken{}, model.NAT{}, model.DDNSProfile{})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InitDBFromMysql() {
+	var err error
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		Conf.MysqlUser,
+		Conf.MysqlPwd,
+		Conf.MysqlHost,
+		Conf.MysqlPort,
+		Conf.MysqlDatabase)
+	DB, err = gorm.Open(mysql.Open(dsn),
+		&gorm.Config{
+			CreateBatchSize: 200,
+		})
 	if err != nil {
 		panic(err)
 	}
@@ -138,12 +170,22 @@ func CleanMonitorHistory() {
 		}
 	}
 	for id, couldRemove := range specialServerKeep {
+		if Conf.UseMysql {
+			DB.Unscoped().Delete(&model.Transfer{}, "server_id = ? AND created_at < ?", id, couldRemove)
+			continue
+		}
 		DB.Unscoped().Delete(&model.Transfer{}, "server_id = ? AND datetime(`created_at`) < datetime(?)", id, couldRemove)
 	}
 	if allServerKeep.IsZero() {
 		DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?)", specialServerIDs)
 	} else {
-		DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND datetime(`created_at`) < datetime(?)", specialServerIDs, allServerKeep)
+		if Conf.UseMysql {
+			DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND created_at < ?", specialServerIDs, allServerKeep)
+
+		} else {
+			DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND datetime(`created_at`) < datetime(?)", specialServerIDs, allServerKeep)
+		}
+
 	}
 }
 

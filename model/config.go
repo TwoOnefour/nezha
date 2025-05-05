@@ -105,6 +105,13 @@ type Config struct {
 
 	k        *koanf.Koanf
 	filePath string
+
+	UseMysql      bool   // 用mysql代替sqlite
+	MysqlPort     int    // 端口
+	MysqlHost     string // mysql host
+	MysqlUser     string // mysql user
+	MysqlPwd      string // mysql password
+	MysqlDatabase string // mysql database
 }
 
 // Read 读取配置文件并应用
@@ -182,7 +189,10 @@ func (c *Config) Read(path string) error {
 	if c.Oauth2.OidcGroupClaim == "" {
 		c.Oauth2.OidcGroupClaim = "groups"
 	}
-
+	if c.UseMysql &&
+		(c.MysqlPwd == "" || c.MysqlUser == "" || c.MysqlHost == "" || c.MysqlPort == 0 || c.MysqlDatabase == "") {
+		return errors.New("missing mysql config")
+	}
 	c.updateIgnoredIPNotificationID()
 	return nil
 }

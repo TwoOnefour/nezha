@@ -27,6 +27,7 @@ type IPInfo struct {
 
 func init() {
 	dbData, err = geoDBFS.ReadFile("geoip.db")
+	log.Printf("NEZHA>> Loading mmdb")
 	if err != nil {
 		log.Printf("NEZHA>> Failed to open geoip database: %v", err)
 	}

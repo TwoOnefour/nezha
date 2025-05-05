@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 	_ "time/tzdata"
 
@@ -60,6 +60,7 @@ func main() {
 	singleton.InitConfigFromPath(dashboardCliParam.ConfigFile)
 	singleton.InitTimezoneAndCache()
 	singleton.InitDBFromPath(dashboardCliParam.DatebaseLocation)
+	singleton.InitDBFromMysql()
 	singleton.InitLocalizer()
 	initSystem()
 
