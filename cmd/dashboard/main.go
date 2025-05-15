@@ -59,8 +59,11 @@ func main() {
 	// 初始化 dao 包
 	singleton.InitConfigFromPath(dashboardCliParam.ConfigFile)
 	singleton.InitTimezoneAndCache()
-	singleton.InitDBFromPath(dashboardCliParam.DatebaseLocation)
-	singleton.InitDBFromMysql()
+	if singleton.Conf.UseMysql {
+		singleton.InitDBFromMysql()
+	} else {
+		singleton.InitDBFromPath(dashboardCliParam.DatebaseLocation)
+	}
 	singleton.InitLocalizer()
 	initSystem()
 

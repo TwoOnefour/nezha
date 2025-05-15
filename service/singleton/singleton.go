@@ -54,9 +54,6 @@ func InitConfigFromPath(path string) {
 
 // InitDBFromPath 从给出的文件路径中加载数据库
 func InitDBFromPath(path string) {
-	if Conf.UseMysql {
-		return
-	}
 	var err error
 	DB, err = gorm.Open(sqlite.Open(path), &gorm.Config{
 		CreateBatchSize: 200,
@@ -127,7 +124,12 @@ func RecordTransferHourlyUsage() {
 	if len(txs) == 0 {
 		return
 	}
-	log.Println("NEZHA>> Cron 流量统计入库", len(txs), DB.Create(txs).Error)
+	err := DB.Create(txs).Error
+	if err != nil {
+		log.Println("NEZHA>> Cron 流量统计入库", len(txs), err)
+		return
+	}
+	log.Println("NEZHA>> Cron 流量统计入库", len(txs))
 }
 
 // CleanMonitorHistory 清理无效或过时的 监控记录 和 流量记录
