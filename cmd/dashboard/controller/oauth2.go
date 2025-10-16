@@ -254,6 +254,9 @@ func (oa *oauth2controller) callback(c *gin.Context) {
 			if admin != "" && strings.EqualFold(user.Login, admin) {
 				isAdmin = true
 				break
+			} else if admin != "" && strings.EqualFold(user.Email, admin) {
+				isAdmin = true
+				break
 			}
 		}
 	}
