@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/soheilhy/cmux"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"time"
 	_ "time/tzdata"
@@ -69,15 +72,35 @@ func main() {
 
 	// TODO 使用 cmux 在同一端口服务 HTTP 和 gRPC
 	singleton.CleanMonitorHistory()
-	go rpc.ServeRPC(singleton.Conf.GRPCPort)
 	serviceSentinelDispatchBus := make(chan model.Monitor) // 用于传递服务监控任务信息的channel
 	go rpc.DispatchTask(serviceSentinelDispatchBus)
 	go rpc.DispatchKeepalive()
 	go singleton.AlertSentinelStart()
 	singleton.NewServiceSentinel(serviceSentinelDispatchBus)
-	srv := controller.ServeWeb(singleton.Conf.HTTPPort)
 	go dispatchReportInfoTask()
+	var httpL net.Listener
+	var srv *http.Server
+	var mu cmux.CMux
+	if singleton.Conf.GRPCPort == singleton.Conf.HTTPPort {
+		var grpcL net.Listener
+		var err error
+
+		mu, grpcL, httpL, err = singleton.InitCmux()
+		if err != nil {
+			return
+		}
+		go rpc.ServeRPCWithListener(grpcL)
+		srv = controller.ServeWebWithCmux()
+	} else {
+		go rpc.ServeRPC(singleton.Conf.GRPCPort)
+		srv = controller.ServeWeb(singleton.Conf.HTTPPort)
+	}
+
 	if err := graceful.Graceful(func() error {
+		if singleton.Conf.GRPCPort == singleton.Conf.HTTPPort && httpL != nil {
+			go srv.Serve(httpL)
+			return mu.Serve()
+		}
 		return srv.ListenAndServe()
 	}, func(c context.Context) error {
 		log.Println("NEZHA>> Graceful::START")

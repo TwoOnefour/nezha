@@ -56,9 +56,45 @@ func ServeWeb(port uint) *http.Server {
 	}
 	r.NoRoute(page404)
 	r.NoMethod(page404)
-
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
+		ReadHeaderTimeout: time.Second * 5,
+		Handler:           r,
+	}
+	return srv
+}
+
+func ServeWebWithCmux() *http.Server {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+	if singleton.Conf.Debug {
+		gin.SetMode(gin.DebugMode)
+		pprof.Register(r)
+	}
+	r.Use(natGateway)
+	tmpl := template.New("").Funcs(funcMap)
+	var err error
+	tmpl, err = tmpl.ParseFS(resource.TemplateFS, "template/**/*.html")
+	if err != nil {
+		panic(err)
+	}
+	tmpl = loadThirdPartyTemplates(tmpl)
+	r.SetHTMLTemplate(tmpl)
+	r.Use(mygin.RecordPath)
+	r.StaticFS("/static", http.FS(resource.StaticFS))
+	routers(r)
+	page404 := func(c *gin.Context) {
+		mygin.ShowErrorPage(c, mygin.ErrInfo{
+			Code:  http.StatusNotFound,
+			Title: "该页面不存在",
+			Msg:   "该页面内容可能已着陆火星",
+			Link:  "/",
+			Btn:   "返回首页",
+		}, true)
+	}
+	r.NoRoute(page404)
+	r.NoMethod(page404)
+	srv := &http.Server{
 		ReadHeaderTimeout: time.Second * 5,
 		Handler:           r,
 	}

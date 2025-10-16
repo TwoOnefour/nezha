@@ -3,15 +3,17 @@ package singleton
 import (
 	"fmt"
 	"log"
+	"net"
+	"strconv"
 	"time"
-
-	"github.com/patrickmn/go-cache"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"github.com/naiba/nezha/model"
 	"github.com/naiba/nezha/pkg/utils"
+	"github.com/patrickmn/go-cache"
+	"github.com/soheilhy/cmux"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var Version = "0.20.13 mysql魔改版"
@@ -21,6 +23,7 @@ var (
 	Cache *cache.Cache
 	DB    *gorm.DB
 	Loc   *time.Location
+	Cmux  *cmux.CMux
 )
 
 func InitTimezoneAndCache() {
@@ -197,4 +200,18 @@ func IPDesensitize(ip string) string {
 		return ip
 	}
 	return utils.IPDesensitize(ip)
+}
+
+func InitCmux() (cmux.CMux, net.Listener, net.Listener, error) {
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(int(Conf.GRPCPort)))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mu := cmux.New(l)
+	grpcL := mu.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+	// 其它全部交给 HTTP（既可 HTTP/1.1 也可 HTTP/2）
+	httpL := mu.Match(cmux.Any())
+
+	return mu, grpcL, httpL, nil
 }

@@ -23,6 +23,13 @@ func ServeRPC(port uint) {
 	server.Serve(listen)
 }
 
+func ServeRPCWithListener(grpcL net.Listener) {
+	server := grpc.NewServer()
+	rpcService.NezhaHandlerSingleton = rpcService.NewNezhaHandler()
+	pb.RegisterNezhaServiceServer(server, rpcService.NezhaHandlerSingleton)
+	server.Serve(grpcL)
+}
+
 func DispatchTask(serviceSentinelDispatchBus <-chan model.Monitor) {
 	workedServerIndex := 0
 	for task := range serviceSentinelDispatchBus {
