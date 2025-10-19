@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	go_sqlite "github.com/glebarez/sqlite"
 	"github.com/naiba/nezha/model"
 	"github.com/naiba/nezha/pkg/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/soheilhy/cmux"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -57,14 +57,8 @@ func InitConfigFromPath(path string) {
 // InitDBFromPath 从给出的文件路径中加载数据库
 func InitDBFromPath(path string) {
 	var err error
-	path = path + "?_pragma=journal_mode(WAL)" +
-		"&_pragma=synchronous(NORMAL)" +
-		"&_pragma=busy_timeout(5000)" +
-		"&_pragma=cache_size(-32768)" +
-		"&_pragma=temp_store(memory)" +
-		"&_pragma=foreign_keys(ON)"
-	DB, err = gorm.Open(go_sqlite.Open(path), &gorm.Config{
-		CreateBatchSize:                          128,
+	DB, err = gorm.Open(sqlite.Open(path), &gorm.Config{
+		CreateBatchSize:                          16,
 		SkipDefaultTransaction:                   true,
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
