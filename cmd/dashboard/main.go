@@ -79,10 +79,9 @@ func main() {
 	var httpL net.Listener
 	var srv *http.Server
 	var mu cmux.CMux
+	var grpcL net.Listener
+	var err error
 	if singleton.Conf.GRPCPort == singleton.Conf.HTTPPort {
-		var grpcL net.Listener
-		var err error
-
 		mu, grpcL, httpL, err = singleton.InitCmux()
 		if err != nil {
 			return
@@ -100,13 +99,29 @@ func main() {
 			return mu.Serve()
 		}
 		return srv.ListenAndServe()
-	}, func(c context.Context) error {
-		log.Println("NEZHA>> Graceful::START")
-		singleton.RecordTransferHourlyUsage()
-		log.Println("NEZHA>> Graceful::END")
-		srv.Shutdown(c)
-		return nil
-	}); err != nil {
+	},
+		func(c context.Context) error {
+			log.Println("NEZHA>> Graceful::START")
+			singleton.RecordTransferHourlyUsage()
+			if srv != nil {
+				_ = srv.Shutdown(c)
+			}
+
+			if grpcL != nil {
+				_ = grpcL.Close()
+			}
+
+			if httpL != nil {
+				_ = httpL.Close()
+			}
+
+			if mu != nil {
+				mu.Close()
+			}
+			log.Println("NEZHA>> Graceful::END")
+			return nil
+		},
+	); err != nil {
 		log.Printf("NEZHA>> ERROR: %v", err)
 	}
 }
