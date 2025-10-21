@@ -12,10 +12,10 @@ type MonitorHistory struct {
 	CreatedAt time.Time      `gorm:"index;<-:create;index:idx_server_id_created_at_monitor_id_avg_delay"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
-	MonitorID uint64         `gorm:"index:idx_server_id_created_at_monitor_id_avg_delay"`
-	ServerID  uint64         `gorm:"index:idx_server_id_created_at_monitor_id_avg_delay"`
+	MonitorID uint64         `gorm:"index;index:idx_server_id_created_at_monitor_id_avg_delay;"`
+	ServerID  uint64         `gorm:"index;index:idx_server_id_created_at_monitor_id_avg_delay"`
 	AvgDelay  float32        `gorm:"index:idx_server_id_created_at_monitor_id_avg_delay"` // 平均延迟，毫秒
-	Up        uint64         // 检查状态良好计数
-	Down      uint64         // 检查状态异常计数
+	Up        uint64         `gorm:"index:idx_server_id_created_at_monitor_id_avg_delay"` // 检查状态良好计数
+	Down      uint64         `gorm:"index:idx_server_id_created_at_monitor_id_avg_delay"` // 检查状态异常计数
 	Data      string
 }

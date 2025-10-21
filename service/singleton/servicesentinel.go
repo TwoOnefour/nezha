@@ -58,7 +58,7 @@ func NewServiceSentinel(serviceSentinelDispatchBus chan<- model.Monitor) {
 
 	var mhs []model.MonitorHistory
 	// 加载当日记录
-	DB.Where("created_at >= ?", today).Find(&mhs)
+	DB.Select("created_at, monitor_id, avg_delay, up, down").Where("created_at >= ?", today).Find(&mhs)
 	totalDelay := make(map[uint64]float32)
 	totalDelayCount := make(map[uint64]float32)
 	for i := 0; i < len(mhs); i++ {
@@ -220,7 +220,7 @@ func (ss *ServiceSentinel) loadMonitorHistory() {
 
 	// 加载服务监控历史记录
 	var mhs []model.MonitorHistory
-	DB.Where("created_at > ? AND created_at < ?", today.AddDate(0, 0, -29), today).Find(&mhs)
+	DB.Where("created_at > ? AND created_at < ?", today.AddDate(0, 0, -29), today).Group("monitor_id").Find(&mhs)
 	var delayCount = make(map[int]int)
 	for i := 0; i < len(mhs); i++ {
 		dayIndex := 28 - (int(today.Sub(mhs[i].CreatedAt).Hours()) / 24)

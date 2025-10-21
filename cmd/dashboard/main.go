@@ -95,30 +95,29 @@ func main() {
 
 	if err := graceful.Graceful(func() error {
 		if singleton.Conf.GRPCPort == singleton.Conf.HTTPPort && httpL != nil {
-			go srv.Serve(httpL)
-			return mu.Serve()
+			go func() {
+				_ = srv.Serve(httpL)
+			}()
+			return func() error {
+				_ = mu.Serve()
+				return nil
+			}()
 		}
 		return srv.ListenAndServe()
 	},
 		func(c context.Context) error {
 			log.Println("NEZHA>> Graceful::START")
+			defer log.Println("NEZHA>> Graceful::END")
 			singleton.RecordTransferHourlyUsage()
-			if srv != nil {
+
+			if srv != nil && grpcL == nil {
 				_ = srv.Shutdown(c)
-			}
-
-			if grpcL != nil {
-				_ = grpcL.Close()
-			}
-
-			if httpL != nil {
-				_ = httpL.Close()
 			}
 
 			if mu != nil {
 				mu.Close()
 			}
-			log.Println("NEZHA>> Graceful::END")
+
 			return nil
 		},
 	); err != nil {

@@ -99,12 +99,12 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 			if db.Dialector.Name() == "mysql" {
 				db.Model(&Transfer{}).
 					Select("SUM(`in`) AS n").
-					Where("`created_at` >= ? AND `server_id` = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", u.GetTransferDurationStart().UTC(), server.ID).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
 					Select("SUM(`in`) AS n").
-					Where("datetime(`created_at`) >= datetime(?) AND server_id = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", u.GetTransferDurationStart().UTC(), server.ID).
 					Scan(&res)
 			}
 			src += float64(res.N)
@@ -116,12 +116,12 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 			if db.Dialector.Name() == "mysql" {
 				db.Model(&Transfer{}).
 					Select("SUM(`out`) AS n").
-					Where("`created_at` >= ? AND `server_id` = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
 					Select("SUM(`out`) AS n").
-					Where("datetime(`created_at`) >= datetime(?) AND server_id = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			}
 			src += float64(res.N)
@@ -133,12 +133,12 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 			if db.Dialector.Name() == "mysql" {
 				db.Model(&Transfer{}).
 					Select("SUM(`in` + `out`) AS n").
-					Where("`created_at` >= ? AND `server_id` = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
 					Select("SUM(`in`+`out`) AS n").
-					Where("datetime(`created_at`) >= datetime(?) AND server_id = ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			}
 			src += float64(res.N)
