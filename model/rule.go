@@ -132,7 +132,7 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 			var res NResult
 			if db.Dialector.Name() != "postgres" {
 				db.Model(&Transfer{}).
-					Select("SUM(`in+out`) AS n").
+					Select("SUM(`in`+`out`) AS n").
 					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			} else {
