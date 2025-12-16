@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/naiba/nezha/service/singleton"
 	"slices"
 	"strings"
 	"time"
@@ -97,7 +96,7 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetInTransfer, server.PrevTransferInSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if singleton.Conf.DbType != "postgres" {
+			if db.Dialector.Name() != "postgres" {
 				db.Model(&Transfer{}).
 					Select("SUM(`in`) AS n").
 					Where("server_id = ? AND created_at >= ?", u.GetTransferDurationStart().UTC(), server.ID).
@@ -114,7 +113,7 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetOutTransfer, server.PrevTransferOutSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if singleton.Conf.DbType != "postgres" {
+			if db.Dialector.Name() != "postgres" {
 				db.Model(&Transfer{}).
 					Select("SUM(`out`) AS n").
 					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
@@ -131,7 +130,7 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetOutTransfer, server.PrevTransferOutSnapshot) + utils.Uint64SubInt64(server.State.NetInTransfer, server.PrevTransferInSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if singleton.Conf.DbType != "postgres" {
+			if db.Dialector.Name() != "postgres" {
 				db.Model(&Transfer{}).
 					Select("SUM(`in+out`) AS n").
 					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).

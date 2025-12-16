@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/naiba/nezha/service/singleton"
 	"strconv"
 	"strings"
 
@@ -8,7 +9,6 @@ import (
 
 	"github.com/naiba/nezha/model"
 	"github.com/naiba/nezha/pkg/mygin"
-	"github.com/naiba/nezha/service/singleton"
 )
 
 type apiV1 struct {
@@ -121,7 +121,6 @@ func (v *apiV1) RegisterServer(c *gin.Context) {
 		c.JSON(response.Code, response)
 	}
 }
-
 
 func (v *apiV1) monitorHistoriesById(c *gin.Context) {
 	idStr := c.Param("id")

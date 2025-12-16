@@ -84,8 +84,8 @@ func InitDBFromPath(path string) {
 	initDB(DB)
 }
 
-func InitDBFromMysql(cnf *model.Config) {
-	_cnf := cnf.MysqlConf
+func InitDBFromMysql() {
+	_cnf := Conf.MysqlConf
 	var err error
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		_cnf.MysqlUser,
@@ -106,8 +106,8 @@ func InitDBFromMysql(cnf *model.Config) {
 	initDB(DB)
 }
 
-func InitDBFromPostgres(cnf *model.Config) {
-	_cnf := cnf.PostGresqlConf
+func InitDBFromPostgres() {
+	_cnf := Conf.PostGresqlConf
 	var err error
 	// 組合 Postgres DSN
 	// 假設你複用現有的 Mysql 變數，或者你在 Config 裡加了新的變數
