@@ -16,13 +16,21 @@ language: zh_CN
 grpcport: 443 # 若grpcport = httpport时，自动开启多路复用
 grpchost: xxxx
 
-dbtype: 
-mysql: 3306
-MysqlHost: test-db-mysql.ns-qrfw0fhx.svc
-MysqlUser: root
-MysqlPwd: 42vb49c4
-MysqlDatabase: nezha
-
+dbtype: mysql # postgres / mysql 若使用sqlite可以不填
+mysqlconf:
+    mysqlPort: 3306
+    MysqlHost: test-db-mysql.ns-qrfw0fhx.svc
+    MysqlUser: root
+    MysqlPwd: 42vb49c4
+    MysqlDatabase: nezha
+postgresqlconf:
+      PGHost: "xxx.postgres.host"
+      PGUser: "postgres"
+      PGPwd:  "123456"
+      PGDatabase: public
+      PGPort: 5432
+      PrepareStmt: false
+      
 tls: true
 oauth2:
     type: "github"
