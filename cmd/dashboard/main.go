@@ -63,9 +63,9 @@ func main() {
 	singleton.InitConfigFromPath(dashboardCliParam.ConfigFile)
 	singleton.InitTimezoneAndCache()
 	if singleton.Conf.DbType == "mysql" {
-		singleton.InitDBFromMysql(singleton.Conf)
+		singleton.InitDBFromMysql()
 	} else if singleton.Conf.DbType == "postgres" {
-		singleton.InitDBFromPostgres(singleton.Conf)
+		singleton.InitDBFromPostgres()
 	} else {
 		singleton.InitDBFromPath(dashboardCliParam.DatebaseLocation)
 	}
