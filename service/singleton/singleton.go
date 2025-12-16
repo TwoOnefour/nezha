@@ -12,6 +12,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/soheilhy/cmux"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -54,17 +55,8 @@ func InitConfigFromPath(path string) {
 	}
 }
 
-// InitDBFromPath 从给出的文件路径中加载数据库
-func InitDBFromPath(path string) {
+func initDB(DB *gorm.DB) {
 	var err error
-	DB, err = gorm.Open(sqlite.Open(path), &gorm.Config{
-		CreateBatchSize:                          16,
-		SkipDefaultTransaction:                   true,
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
-	if err != nil {
-		panic(err)
-	}
 	if Conf.Debug {
 		DB = DB.Debug()
 	}
@@ -77,14 +69,29 @@ func InitDBFromPath(path string) {
 	}
 }
 
-func InitDBFromMysql() {
+// InitDBFromPath 从给出的文件路径中加载数据库
+func InitDBFromPath(path string) {
+	var err error
+	DB, err = gorm.Open(sqlite.Open(path), &gorm.Config{
+		CreateBatchSize:                          16,
+		SkipDefaultTransaction:                   true,
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	initDB(DB)
+}
+
+func InitDBFromMysql(cnf *model.Config) {
+	_cnf := cnf.MysqlConf
 	var err error
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		Conf.MysqlUser,
-		Conf.MysqlPwd,
-		Conf.MysqlHost,
-		Conf.MysqlPort,
-		Conf.MysqlDatabase)
+		_cnf.MysqlUser,
+		_cnf.MysqlPwd,
+		_cnf.MysqlHost,
+		_cnf.MysqlPort,
+		_cnf.MysqlDatabase)
 	DB, err = gorm.Open(mysql.Open(dsn),
 		&gorm.Config{
 			CreateBatchSize: 200,
@@ -92,16 +99,30 @@ func InitDBFromMysql() {
 	if err != nil {
 		panic(err)
 	}
-	if Conf.Debug {
-		DB = DB.Debug()
-	}
-	err = DB.AutoMigrate(model.Server{}, model.User{},
-		model.Notification{}, model.AlertRule{}, model.Monitor{},
-		model.MonitorHistory{}, model.Cron{}, model.Transfer{},
-		model.ApiToken{}, model.NAT{}, model.DDNSProfile{})
+	initDB(DB)
+}
+
+func InitDBFromPostgres(cnf *model.Config) {
+	_cnf := cnf.PostGresqlConf
+	var err error
+	// 組合 Postgres DSN
+	// 假設你複用現有的 Mysql 變數，或者你在 Config 裡加了新的變數
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
+		_cnf.PGHost,     // 或者 Conf.PGHost
+		_cnf.PGUser,     // 或者 Conf.PGUser
+		_cnf.PGPwd,      // 或者 Conf.PGPwd
+		_cnf.PGDatabase, // 或者 Conf.PGDatabase
+		_cnf.PGPort,     // 或者 Conf.PGPort
+		_cnf.Location,   // 使用配置中的時區
+	)
+
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		CreateBatchSize: 200,
+	})
 	if err != nil {
 		panic(err)
 	}
+	initDB(DB)
 }
 
 // RecordTransferHourlyUsage 对流量记录进行打点
@@ -169,6 +190,7 @@ func CleanMonitorHistory() {
 		}
 	}
 	tx := DB.Begin()
+	defer tx.Rollback()
 	if tx.Error != nil {
 		log.Println("NEZHA>> 删除监控数据遇到错误：", tx.Error)
 		return
@@ -181,26 +203,16 @@ func CleanMonitorHistory() {
 	// 考虑到 sqlite 数据量问题，仅保留一天数据，
 	// server_id = 0 的数据会用于/service页面的可用性展示
 	DB.Unscoped().Delete(&model.MonitorHistory{}, "(created_at < ? AND server_id != 0) OR monitor_id NOT IN (?)", time.Now().AddDate(0, 0, -1), monitorsIds)
-	DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (SELECT `id` FROM servers)")
+	DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (SELECT id FROM servers)")
 	for id, couldRemove := range specialServerKeep {
-		if Conf.UseMysql {
-			DB.Unscoped().Delete(&model.Transfer{}, "server_id = ? AND created_at < ?", id, couldRemove)
-			continue
-		}
 		DB.Unscoped().Delete(&model.Transfer{}, "server_id = ? AND created_at < ?", id, couldRemove)
 	}
 	if allServerKeep.IsZero() {
 		DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?)", specialServerIDs)
 	} else {
-		if Conf.UseMysql {
-			DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND created_at < ?", specialServerIDs, allServerKeep)
-		} else {
-			DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND created_at < ?", specialServerIDs, allServerKeep)
-		}
-
+		DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (?) AND created_at < ?", specialServerIDs, allServerKeep)
 	}
 	if err := tx.Commit().Error; err != nil {
-		_ = tx.Rollback().Error
 		log.Println("NEZHA>> 删除监控数据遇到错误：", tx.Error)
 	}
 }

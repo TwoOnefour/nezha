@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/naiba/nezha/service/singleton"
 	"slices"
 	"strings"
 	"time"
@@ -96,15 +97,15 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetInTransfer, server.PrevTransferInSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if db.Dialector.Name() == "mysql" {
+			if singleton.Conf.DbType != "postgres" {
 				db.Model(&Transfer{}).
 					Select("SUM(`in`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Where("server_id = ? AND created_at >= ?", u.GetTransferDurationStart().UTC(), server.ID).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
-					Select("SUM(`in`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", u.GetTransferDurationStart().UTC(), server.ID).
+					Select(`SUM("in") AS n`).
+					Where("server_id = ? AND created_at >= ?", u.GetTransferDurationStart().UTC(), server.ID).
 					Scan(&res)
 			}
 			src += float64(res.N)
@@ -113,15 +114,15 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetOutTransfer, server.PrevTransferOutSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if db.Dialector.Name() == "mysql" {
+			if singleton.Conf.DbType != "postgres" {
 				db.Model(&Transfer{}).
 					Select("SUM(`out`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
+					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
-					Select("SUM(`out`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
+					Select(`SUM("out") AS n`).
+					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			}
 			src += float64(res.N)
@@ -130,17 +131,18 @@ func (u *Rule) Snapshot(cycleTransferStats *CycleTransferStats, server *Server, 
 		src = float64(utils.Uint64SubInt64(server.State.NetOutTransfer, server.PrevTransferOutSnapshot) + utils.Uint64SubInt64(server.State.NetInTransfer, server.PrevTransferInSnapshot))
 		if u.CycleInterval != 0 {
 			var res NResult
-			if db.Dialector.Name() == "mysql" {
+			if singleton.Conf.DbType != "postgres" {
 				db.Model(&Transfer{}).
-					Select("SUM(`in` + `out`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
+					Select("SUM(`in+out`) AS n").
+					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			} else {
 				db.Model(&Transfer{}).
-					Select("SUM(`in`+`out`) AS n").
-					Where("`server_id` = ? AND `created_at` >= ?", server.ID, u.GetTransferDurationStart().UTC()).
+					Select(`SUM("in" + "out") AS n`).
+					Where("server_id = ? AND created_at >= ?", server.ID, u.GetTransferDurationStart().UTC()).
 					Scan(&res)
 			}
+
 			src += float64(res.N)
 		}
 	case "load1":

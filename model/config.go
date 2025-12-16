@@ -103,15 +103,24 @@ type Config struct {
 
 	DNSServers string
 
-	k        *koanf.Koanf
-	filePath string
-
-	UseMysql      bool   // 用mysql代替sqlite
-	MysqlPort     int    // 端口
-	MysqlHost     string // mysql host
-	MysqlUser     string // mysql user
-	MysqlPwd      string // mysql password
-	MysqlDatabase string // mysql database
+	k         *koanf.Koanf
+	filePath  string
+	DbType    string
+	MysqlConf struct {
+		MysqlPort     int    // 端口
+		MysqlHost     string // mysql host
+		MysqlUser     string // mysql user
+		MysqlPwd      string // mysql password
+		MysqlDatabase string // mysql database
+	}
+	PostGresqlConf struct {
+		PGHost     string
+		PGUser     string // 或者 Conf.PGUser
+		PGPwd      string
+		PGDatabase string
+		PGPort     int
+		Location   string
+	}
 }
 
 // Read 读取配置文件并应用
@@ -189,9 +198,11 @@ func (c *Config) Read(path string) error {
 	if c.Oauth2.OidcGroupClaim == "" {
 		c.Oauth2.OidcGroupClaim = "groups"
 	}
-	if c.UseMysql &&
-		(c.MysqlPwd == "" || c.MysqlUser == "" || c.MysqlHost == "" || c.MysqlPort == 0 || c.MysqlDatabase == "") {
-		return errors.New("missing mysql config")
+	if c.DbType == "mysql" {
+		mysqlConf := c.MysqlConf
+		if mysqlConf.MysqlPwd == "" || mysqlConf.MysqlUser == "" || mysqlConf.MysqlHost == "" || mysqlConf.MysqlPort == 0 || mysqlConf.MysqlDatabase == "" {
+			return errors.New("missing mysql config")
+		}
 	}
 	c.updateIgnoredIPNotificationID()
 	return nil

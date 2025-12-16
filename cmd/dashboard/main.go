@@ -62,8 +62,10 @@ func main() {
 	// 初始化 dao 包
 	singleton.InitConfigFromPath(dashboardCliParam.ConfigFile)
 	singleton.InitTimezoneAndCache()
-	if singleton.Conf.UseMysql {
-		singleton.InitDBFromMysql()
+	if singleton.Conf.DbType == "mysql" {
+		singleton.InitDBFromMysql(singleton.Conf)
+	} else if singleton.Conf.DbType == "postgres" {
+		singleton.InitDBFromPostgres(singleton.Conf)
 	} else {
 		singleton.InitDBFromPath(dashboardCliParam.DatebaseLocation)
 	}
