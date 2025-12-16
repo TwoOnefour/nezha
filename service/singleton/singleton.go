@@ -133,6 +133,7 @@ func InitDBFromPostgres(cnf *model.Config) {
 	if err != nil {
 		panic(err)
 	}
+	DB.Exec("CREATE SCHEMA IF NOT EXISTS nezha")
 	initDB(DB)
 }
 
