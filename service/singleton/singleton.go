@@ -97,8 +97,7 @@ func InitDBFromMysql(cnf *model.Config) {
 		&gorm.Config{
 			CreateBatchSize: 200,
 			NamingStrategy: schema.NamingStrategy{
-				TablePrefix:   "nezha.",
-				SingularTable: false,
+				TablePrefix: "nezha.",
 			},
 		})
 	if err != nil {
@@ -128,8 +127,7 @@ func InitDBFromPostgres(cnf *model.Config) {
 		CreateBatchSize: 200,
 		PrepareStmt:     _cnf.PrepareStmt,
 		NamingStrategy: schema.NamingStrategy{
-			TablePrefix:   "nezha.",
-			SingularTable: false,
+			TablePrefix: "nezha.",
 		},
 	})
 	if err != nil {
