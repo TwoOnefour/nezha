@@ -31,7 +31,7 @@ postgresqlconf:
       PGDatabase: public
       PGPort: 5432
       PrepareStmt: false
-      
+      PGdsn: "postgresql://xxxxx" # 若直接填这个则不需要些别的了
 tls: true
 oauth2:
     type: "github"

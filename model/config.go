@@ -120,6 +120,7 @@ type Config struct {
 		PGDatabase  string
 		PGPort      int
 		PrepareStmt bool
+		PGdsn       string
 	}
 }
 
