@@ -114,12 +114,12 @@ type Config struct {
 		MysqlDatabase string // mysql database
 	}
 	PostGresqlConf struct {
-		PGHost     string
-		PGUser     string // 或者 Conf.PGUser
-		PGPwd      string
-		PGDatabase string
-		PGPort     int
-		Location   string
+		PGHost      string
+		PGUser      string // 或者 Conf.PGUser
+		PGPwd       string
+		PGDatabase  string
+		PGPort      int
+		PrepareStmt bool
 	}
 }
 
@@ -199,10 +199,15 @@ func (c *Config) Read(path string) error {
 		c.Oauth2.OidcGroupClaim = "groups"
 	}
 	if c.DbType == "mysql" {
-		mysqlConf := c.MysqlConf
-		if mysqlConf.MysqlPwd == "" || mysqlConf.MysqlUser == "" || mysqlConf.MysqlHost == "" || mysqlConf.MysqlPort == 0 || mysqlConf.MysqlDatabase == "" {
+		if c.MysqlConf.MysqlPwd == "" || c.MysqlConf.MysqlUser == "" || c.MysqlConf.MysqlHost == "" || c.MysqlConf.MysqlPort == 0 || c.MysqlConf.MysqlDatabase == "" {
 			return errors.New("missing mysql config")
 		}
+	} else if c.DbType == "postgres" {
+		if !c.PostGresqlConf.PrepareStmt {
+			c.PostGresqlConf.PrepareStmt = true
+		}
+	} else {
+		c.DbType = "sqlite" // default
 	}
 	c.updateIgnoredIPNotificationID()
 	return nil

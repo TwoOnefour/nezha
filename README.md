@@ -16,8 +16,8 @@ language: zh_CN
 grpcport: 443 # 若grpcport = httpport时，自动开启多路复用
 grpchost: xxxx
 
-UseMysql: true
-MysqlPort: 3306
+dbtype: 
+mysql: 3306
 MysqlHost: test-db-mysql.ns-qrfw0fhx.svc
 MysqlUser: root
 MysqlPwd: 42vb49c4

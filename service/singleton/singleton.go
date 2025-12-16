@@ -107,17 +107,16 @@ func InitDBFromPostgres(cnf *model.Config) {
 	var err error
 	// 組合 Postgres DSN
 	// 假設你複用現有的 Mysql 變數，或者你在 Config 裡加了新的變數
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=%s",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d",
 		_cnf.PGHost,     // 或者 Conf.PGHost
 		_cnf.PGUser,     // 或者 Conf.PGUser
 		_cnf.PGPwd,      // 或者 Conf.PGPwd
 		_cnf.PGDatabase, // 或者 Conf.PGDatabase
 		_cnf.PGPort,     // 或者 Conf.PGPort
-		_cnf.Location,   // 使用配置中的時區
 	)
-
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		CreateBatchSize: 200,
+		PrepareStmt:     _cnf.PrepareFmt,
 	})
 	if err != nil {
 		panic(err)
