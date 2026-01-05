@@ -130,7 +130,7 @@ func (c *Config) Read(path string) error {
 	c.filePath = path
 
 	// 先读取环境变量，然后读取配置文件；后者可以覆盖前者，因为哪吒支持在线修改配置
-
+	c.PostGresqlConf.PrepareStmt = true
 	err := c.k.Load(env.Provider("NZ_", ".", func(s string) string {
 		return strings.Replace(strings.ToLower(strings.TrimPrefix(s, "NZ_")), "_", ".", -1)
 	}), nil)
@@ -204,9 +204,7 @@ func (c *Config) Read(path string) error {
 			return errors.New("missing mysql config")
 		}
 	} else if c.DbType == "postgres" {
-		if !c.PostGresqlConf.PrepareStmt {
-			c.PostGresqlConf.PrepareStmt = true
-		}
+		// do something
 	} else {
 		c.DbType = "sqlite" // default
 	}
