@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/naiba/nezha/model"
@@ -127,13 +126,6 @@ func InitDBFromPostgres() {
 	if err != nil {
 		panic(err)
 	}
-	DB.Exec("CREATE SCHEMA IF NOT EXISTS " + func() string {
-		if _cnf.PGDatabase != "" {
-			return _cnf.PGDatabase
-		}
-		_l := strings.Split("/", _cnf.PGdsn)
-		return _l[len(_l)-1]
-	}())
 	initDB(DB)
 }
 
