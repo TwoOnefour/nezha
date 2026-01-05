@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/soheilhy/cmux"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
 	_ "time/tzdata"
+
+	"github.com/soheilhy/cmux"
 
 	"github.com/naiba/nezha/cmd/dashboard/controller"
 	"github.com/naiba/nezha/cmd/dashboard/rpc"
@@ -119,7 +120,16 @@ func main() {
 			if mu != nil {
 				mu.Close()
 			}
-
+			if singleton.DB != nil {
+				sqlDB, err := singleton.DB.DB()
+				if err == nil {
+					if err := sqlDB.Close(); err != nil {
+						log.Printf("NEZHA>> Close DB Error: %v", err)
+					} else {
+						log.Println("NEZHA>> Database connection closed")
+					}
+				}
+			}
 			return nil
 		},
 	); err != nil {

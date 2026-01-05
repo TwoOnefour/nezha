@@ -55,8 +55,8 @@ type Monitor struct {
 	NotificationTag string // 当前服务监控所属的通知组
 	Cover           uint8
 
-	EnableTriggerTask      bool     `gorm:"default: false"`
-	EnableShowInService    bool     `gorm:"default: false"`
+	EnableTriggerTask      bool     `gorm:"default:false"`
+	EnableShowInService    bool     `gorm:"default:false"`
 	FailTriggerTasksRaw    string   `gorm:"default:'[]'"`
 	RecoverTriggerTasksRaw string   `gorm:"default:'[]'"`
 	FailTriggerTasks       []uint64 `gorm:"-" json:"-"` // 失败时执行的触发任务id

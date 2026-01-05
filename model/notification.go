@@ -37,8 +37,8 @@ type Notification struct {
 	URL           string
 	RequestMethod int
 	RequestType   int
-	RequestHeader string `gorm:"type:longtext" `
-	RequestBody   string `gorm:"type:longtext" `
+	RequestHeader string `gorm:"type:text" `
+	RequestBody   string `gorm:"type:text" `
 	VerifySSL     *bool
 }
 
