@@ -219,7 +219,7 @@ func (ss *ServiceSentinel) loadMonitorHistory() {
 	}
 
 	var mhs []model.MonitorHistory
-	
+
 	DB.Where("created_at > ? AND created_at < ?", today.AddDate(0, 0, -29), today).
 		Find(&mhs)
 
