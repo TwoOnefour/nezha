@@ -310,9 +310,8 @@ func (ma *memberAPI) searchTask(c *gin.Context) {
 func (ma *memberAPI) searchDDNS(c *gin.Context) {
 	var ddns []model.DDNSProfile
 	likeWord := "%" + c.Query("word") + "%"
-	singleton.DB.Select("id,name").Where("id = ? OR name LIKE ?",
-		c.Query("word"), likeWord).Find(&ddns)
-
+	singleton.DB.Select("id,name").Where("name LIKE ?",
+		likeWord).Find(&ddns)
 	var resp []searchResult
 	for i := 0; i < len(ddns); i++ {
 		resp = append(resp, searchResult{

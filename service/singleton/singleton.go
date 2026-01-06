@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/naiba/nezha/model"
@@ -119,7 +120,10 @@ func InitDBFromPostgres() {
 	} else {
 		dsn = _cnf.PGdsn
 	}
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err = gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: _cnf.PrepareStmt,
+	}), &gorm.Config{
 		CreateBatchSize: 200,
 		PrepareStmt:     _cnf.PrepareStmt,
 	})
