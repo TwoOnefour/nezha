@@ -121,7 +121,7 @@ func InitDBFromPostgres() {
 	}
 	DB, err = gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
-		PreferSimpleProtocol: _cnf.PrepareStmt,
+		PreferSimpleProtocol: !_cnf.PrepareStmt,
 	}), &gorm.Config{
 		CreateBatchSize: 200,
 		PrepareStmt:     _cnf.PrepareStmt,
