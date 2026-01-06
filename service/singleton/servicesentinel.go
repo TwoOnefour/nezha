@@ -218,21 +218,33 @@ func (ss *ServiceSentinel) loadMonitorHistory() {
 		}
 	}
 
-	// 加载服务监控历史记录
 	var mhs []model.MonitorHistory
-	DB.Where("created_at > ? AND created_at < ?", today.AddDate(0, 0, -29), today).Group("monitor_id").Find(&mhs)
-	var delayCount = make(map[int]int)
-	for i := 0; i < len(mhs); i++ {
-		dayIndex := 28 - (int(today.Sub(mhs[i].CreatedAt).Hours()) / 24)
-		if dayIndex < 0 {
+	
+	DB.Where("created_at > ? AND created_at < ?", today.AddDate(0, 0, -29), today).
+		Find(&mhs)
+
+	var monitorDayCount = make(map[uint64]map[int]int)
+
+	for _, mh := range mhs {
+		hoursDiff := int(today.Sub(mh.CreatedAt).Hours())
+		dayIndex := 28 - (hoursDiff / 24)
+
+		if dayIndex < 0 || dayIndex > 29 {
 			continue
 		}
-		ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].Delay[dayIndex] = (ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].Delay[dayIndex]*float32(delayCount[dayIndex]) + mhs[i].AvgDelay) / float32(delayCount[dayIndex]+1)
-		delayCount[dayIndex]++
-		ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].Up[dayIndex] += int(mhs[i].Up)
-		ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].TotalUp += mhs[i].Up
-		ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].Down[dayIndex] += int(mhs[i].Down)
-		ServiceSentinelShared.monthlyStatus[mhs[i].MonitorID].TotalDown += mhs[i].Down
+		if _, ok := monitorDayCount[mh.MonitorID]; !ok {
+			monitorDayCount[mh.MonitorID] = make(map[int]int)
+		}
+		stat := ServiceSentinelShared.monthlyStatus[mh.MonitorID]
+		currentCount := monitorDayCount[mh.MonitorID][dayIndex]
+		oldDelayTotal := stat.Delay[dayIndex] * float32(currentCount)
+		newDelayAvg := (oldDelayTotal + mh.AvgDelay) / float32(currentCount+1)
+		ServiceSentinelShared.monthlyStatus[mh.MonitorID].Delay[dayIndex] = newDelayAvg
+		ServiceSentinelShared.monthlyStatus[mh.MonitorID].Up[dayIndex] += int(mh.Up)
+		ServiceSentinelShared.monthlyStatus[mh.MonitorID].Down[dayIndex] += int(mh.Down)
+		ServiceSentinelShared.monthlyStatus[mh.MonitorID].TotalUp += mh.Up
+		ServiceSentinelShared.monthlyStatus[mh.MonitorID].TotalDown += mh.Down
+		monitorDayCount[mh.MonitorID][dayIndex]++
 	}
 }
 
