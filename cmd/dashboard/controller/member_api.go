@@ -267,9 +267,14 @@ type searchResult struct {
 
 func (ma *memberAPI) searchServer(c *gin.Context) {
 	var servers []model.Server
-	likeWord := "%" + c.Query("word") + "%"
-	singleton.DB.Select("id,name").Where("id = ? OR name LIKE ? OR tag LIKE ? OR note LIKE ?",
-		c.Query("word"), likeWord, likeWord, likeWord).Find(&servers)
+	word := c.Query("word")
+	if word != "" {
+		likeWord := "%" + c.Query("word") + "%"
+		singleton.DB.Select("id,name").Where("id = ? OR name LIKE ? OR tag LIKE ? OR note LIKE ?",
+			c.Query("word"), likeWord, likeWord, likeWord).Find(&servers)
+	} else {
+		singleton.DB.Model(&model.Server{}).Select("id, name").Find(&servers)
+	}
 
 	var resp []searchResult
 	for i := 0; i < len(servers); i++ {
@@ -289,8 +294,8 @@ func (ma *memberAPI) searchServer(c *gin.Context) {
 func (ma *memberAPI) searchTask(c *gin.Context) {
 	var tasks []model.Cron
 	likeWord := "%" + c.Query("word") + "%"
-	singleton.DB.Select("id,name").Where("id = ? OR name LIKE ?",
-		c.Query("word"), likeWord).Find(&tasks)
+	singleton.DB.Select("id,name").Where("name LIKE ?",
+		likeWord).Find(&tasks)
 
 	var resp []searchResult
 	for i := 0; i < len(tasks); i++ {
